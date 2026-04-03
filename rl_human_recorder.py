@@ -8,11 +8,9 @@ import sys
 import datetime
 
 # --- 設定固定路徑 ---
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-LOG_DIR = os.path.join(BASE_DIR, "logs")
+BASE_DIR = r"C:\Users\Gwen\Desktop\NeuroProGram\week01"
 DEMO_DIR = os.path.join(BASE_DIR, "human_demo")
 os.makedirs(DEMO_DIR, exist_ok=True)
-os.makedirs(LOG_DIR, exist_ok=True)
 
 class AdvancedHunterEnv(gym.Env):
     def __init__(self):
@@ -21,6 +19,7 @@ class AdvancedHunterEnv(gym.Env):
         self.num_targets, self.target_speed, self.view_speed = 50, 12.0, 600.0
         self.max_steps = 1000 
         self.action_space = spaces.Box(low=-1, high=1, shape=(5,), dtype=np.float32)
+        # 恢復為 5 維 Obs
         self.observation_space = spaces.Box(low=-1, high=1, shape=(5,), dtype=np.float32)
         self.reset()
     def reset(self, seed=None, options=None):
@@ -31,7 +30,8 @@ class AdvancedHunterEnv(gym.Env):
         return self._get_obs(), {}
     def _get_obs(self):
         dists = np.linalg.norm(self.targets_pos - self.view_pos, axis=1)
-        rel_pos = self.targets_pos[np.argmin(dists)] - self.view_pos
+        nearest_idx = np.argmin(dists)
+        rel_pos = self.targets_pos[nearest_idx] - self.view_pos
         obs_rel_pos = np.clip(rel_pos / 2000.0, -1, 1)
         seen_flag = 1.0 if np.all(np.abs(rel_pos) <= self.win_size/2) else -1.0
         return np.array([(self.view_pos[0]/self.map_size)*2-1, (self.view_pos[1]/self.map_size)*2-1,
@@ -48,8 +48,9 @@ class AdvancedHunterEnv(gym.Env):
         if action[4] > 0:
             click_pos = self.view_pos + (action[2:4] * (self.win_size / 2))
             info["click_pos"] = click_pos
-            if np.min(np.linalg.norm(self.targets_pos - click_pos, axis=1)) < 65:
-                self.targets_pos[np.argmin(np.linalg.norm(self.targets_pos - click_pos, axis=1))] = np.random.uniform(0, self.map_size, 2)
+            dists = np.linalg.norm(self.targets_pos - click_pos, axis=1)
+            if np.min(dists) < 70:
+                self.targets_pos[np.argmin(dists)] = np.random.uniform(0, self.map_size, 2)
                 info["hit"] = True
         return obs, reward, False, self.current_step >= self.max_steps, info
 
@@ -60,7 +61,7 @@ class InteractiveVisualizer:
         m_path = os.path.join(BASE_DIR, model_filename) if model_filename else None
         self.model = PPO.load(m_path) if m_path and os.path.exists(m_path) else None
         self.screen = pygame.display.set_mode((1300, 750))
-        pygame.display.set_caption("互動錄製與展示 (數據保存版)")
+        pygame.display.set_caption("互動錄製與展示 (恢復 5D 版)")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont("microsoftjhenghei", 22, bold=True)
         self.mode = "HUMAN" 
@@ -110,16 +111,15 @@ class InteractiveVisualizer:
             for t_p in self.env.targets_pos: pygame.draw.circle(self.screen, (100, 150, 200), (700+int(t_p[0]*0.05), 50+int(t_p[1]*0.05)), 2)
             pygame.draw.rect(self.screen, (255, 255, 255), (700+int((v_p[0]-w_s/2)*0.05), 50+int((v_p[1]-w_s/2)*0.05), 40, 40), 1)
             self.screen.blit(self.font.render(f"模式: {self.mode} | 成功: {self.total_hits}", True, (255, 255, 0)), (50, 15))
-            self.screen.blit(self.font.render(f"錄製數: {len(self.recording)} | 保存路徑: human_demo/", True, (0, 255, 255)), (700, 570))
+            self.screen.blit(self.font.render(f"錄製: {len(self.recording)} | 點擊: {self.total_clicks} | 幀數: {self.total_frames}", True, (0, 255, 255)), (700, 570))
             pygame.display.flip(); self.clock.tick(60)
 
     def save_recording(self):
         if len(self.recording) > 100:
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = f"human_demo_{timestamp}.npz"
-            save_path = os.path.join(DEMO_DIR, filename)
+            save_path = os.path.join(DEMO_DIR, f"human_demo_{timestamp}.npz")
             np.savez(save_path, obs=np.array([d["obs"] for d in self.recording]), actions=np.array([d["act"] for d in self.recording]))
-            print(f"\n[系統] 錄製成功！檔案已儲存至：{save_path}")
+            print(f"\n[系統] 錄製完成：{save_path}")
 
 if __name__ == "__main__":
     InteractiveVisualizer("hunter_latest.zip").run()
