@@ -5,6 +5,7 @@
 
 ## 🚀 快速上手
 專案架構
+```
    2 ├── rl_human_recorder.py      # [主程式] 專家數據錄製與互動介面
    3 ├── rl_pretraining.py         # [主程式] 模仿學習預訓練系統 (BC)
    4 ├── rl_machine_training.py    # [主程式] 機器增量強化訓練系統 (PPO)
@@ -13,6 +14,7 @@
    7 ├── pretrained_hunter.zip     # [權重] 模仿人類行為的初期模型
    8 ├── human_demo/               # [數據] 存放所有人類操作錄製檔 (.npz)
    9 └── logs/                     # [日誌] 訓練過程數據 (TensorBoard 使用)
+```
 
 ### 1. 環境設定
 請確保您的系統已安裝 Python 3.8+。執行以下指令安裝必要套件：
