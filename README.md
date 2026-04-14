@@ -11,7 +11,7 @@
   ---
 
   📂 專案架構 (Project Tree)
---
+```
    1 NeuroProGram/week01/
    2 ├── rl_human_recorder.py      # [主程式] 專家數據錄製與互動介面
    3 ├── rl_pretraining.py         # [主程式] 模仿學習預訓練系統 (BC)
@@ -21,7 +21,7 @@
    7 ├── pretrained_hunter.zip     # [權重] 模仿人類行為的初期模型
    8 ├── human_demo/               # [數據] 存放所有人類操作錄製檔 (.npz)
    9 └── logs/                     # [日誌] 訓練過程數據 (TensorBoard 使用)
---
+```
   ---
 
   🚀 漸進式強化流程 (Execution Flow)
