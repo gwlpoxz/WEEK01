@@ -12,15 +12,18 @@
 
   📂 專案架構 (Project Tree)
 ```
-   1 NeuroProGram/week01/
-   2 ├── rl_human_recorder.py      # [主程式] 專家數據錄製與互動介面
-   3 ├── rl_pretraining.py         # [主程式] 模仿學習預訓練系統 (BC)
-   4 ├── rl_machine_training.py    # [主程式] 機器增量強化訓練系統 (PPO)
-   5 ├── rl_ai_demo.py             # [主程式] AI 成果效能驗證展示介面
-   6 ├── hunter_latest.zip         # [權重] 最終進化之 AI 模型大腦
-   7 ├── pretrained_hunter.zip     # [權重] 模仿人類行為的初期模型
-   8 ├── human_demo/               # [數據] 存放所有人類操作錄製檔 (.npz)
-   9 └── logs/                     # [日誌] 訓練過程數據 (TensorBoard 使用)
+ 1 NeuroProGram/week01/
+ 2 ├── rl_human_recorder.py      # [主程式] 專家數據錄製與互動介面
+ 3 ├── rl_pretraining.py         # [主程式] 模仿學習預訓練系統 (BC)
+ 4 ├── rl_machine_training.py    # [主程式] 機器增量強化訓練系統 (PPO)
+ 5 ├── rl_ai_demo.py             # [主程式] AI 成果效能驗證展示介面
+ 6 ├── hunter_env.py             # [核心] 獵人遊戲環境邏輯與獎勵機制
+ 7 ├── hunter_latest.zip         # [權重] 最終進化之 AI 模型大腦
+ 8 ├── pretrained_hunter.zip     # [權重] 模仿人類行為的初期模型
+ 9 ├── human_demo/               # [數據] 存放所有人類操作錄製檔 (.npz)
+10 ├── logs/                     # [日誌] 訓練過程數據 (TensorBoard 使用)
+11 └──  performance_history.csv   # [紀錄] 訓練效能歷史數據追蹤
+
 ```
   ---
 
