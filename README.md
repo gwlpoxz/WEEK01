@@ -28,30 +28,17 @@
 
   請在 PowerShell 中依序執行以下指令，以完成從數據採集到機器進化的完整閉環：
 
-  1. 專家示範 (Data Collection)
+  1. 專家示範 (Data Collection)rl_human_recorder.py
   親自操作以產出人類專家的「教材」檔案。
-   1 python "C:\Users\Gwen\Desktop\NeuroProGram\week01\rl_human_recorder.py"
-   * 操作：WASD 移動，滑鼠左鍵點擊。
 
-  2. 行為模仿 (Pre-training)
-  讓 AI 研讀教材，獲得人類的操作直覺。
-   1 python "C:\Users\Gwen\Desktop\NeuroProGram\week01\rl_pretraining.py"
+  2. 行為模仿 (Pre-training)rl_pretraining.py
+  讓AI研讀教材，獲得人類的操作直覺。
 
-  3. 經驗承接 (Bridge)
-  將模仿成果轉交給強化學習系統作為起點。
-
-   1 Copy-Item "C:\Users\Gwen\Desktop\NeuroProGram\week01\pretrained_hunter.zip"
-     "C:\Users\Gwen\Desktop\NeuroProGram\week01\hunter_latest.zip" -Force
-
-  4. 機器進化 (Incremental RL)
+  3. 機器進化 (Incremental RL)rl_machine_training.py
   執行增量強化訓練，AI 會透過自我試錯超越人類極限。此指令可多次執行。
 
-   1 python "C:\Users\Gwen\Desktop\NeuroProGram\week01\rl_machine_training.py"
-
-  5. 成果展示 (Final Demo)
+  4. 成果展示 (Final Demo)rl_ai_demo.py
   開啟 25 FPS 高流暢介面觀看 AI 自動化成果與 KPI 報告。
-
-   1 python "C:\Users\Gwen\Desktop\NeuroProGram\week01\rl_ai_demo.py"
 
   ---
 
