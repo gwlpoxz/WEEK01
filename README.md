@@ -12,36 +12,42 @@
 
   📂 專案架構 (Project Tree)
 ```
- 1 NeuroProGram/week01/
- 2 ├── rl_human_recorder.py      # [主程式] 專家數據錄製與互動介面
- 3 ├── rl_pretraining.py         # [主程式] 模仿學習預訓練系統 (BC)
- 4 ├── rl_machine_training.py    # [主程式] 機器增量強化訓練系統 (PPO)
- 5 ├── rl_ai_demo.py             # [主程式] AI 成果效能驗證展示介面
- 6 ├── hunter_env.py             # [核心] 獵人遊戲環境邏輯與獎勵機制
- 7 ├── hunter_latest.zip         # [權重] 最終進化之 AI 模型大腦
- 8 ├── pretrained_hunter.zip     # [權重] 模仿人類行為的初期模型
- 9 ├── human_demo/               # [數據] 存放所有人類操作錄製檔 (.npz)
-10 ├── logs/                     # [日誌] 訓練過程數據 (TensorBoard 使用)
-11 └──  performance_history.csv   # [紀錄] 訓練效能歷史數據追蹤
+    2 ├── rl_human_recorder.py      # [主程式] 專家數據錄製與互動介面
+    3 ├── rl_pretraining.py         # [主程式] 模仿學習預訓練系統 (BC)
+    4 ├── rl_machine_training.py    # [主程式] 機器增量強化訓練系統 (PPO)
+    5 ├── rl_ai_demo.py             # [主程式] AI 成果效能驗證展示介面
+    6 ├── custom_ppo.py             # [核心] 自定義 PPO 演算法邏輯實現
+    7 ├── model.py                  # [核心] 類神經網路模型 (CNN/MLP) 架構定義
+    8 ├── hunter_latest.pth         # [權重] 訓練好的模型參數檔案 (.pth)
+    9 ├── hunter_latest.zip         # [權重] 最終進化之 AI 模型大腦 (壓縮備份)
+   10 ├── pretrained_hunter.zip     # [權重] 模仿人類行為的初期模型 (壓縮備份)
+   11 ├── human_demo/               # [數據] 存放所有人類操作錄製檔 (.npz)
+   12 ├── logs/                     # [日誌] 訓練過程數據 (TensorBoard 使用)
+   13 └── performance_history.csv   # [紀錄] 訓練效能歷史數據追蹤
+
 
 ```
   ---
 
   🚀 漸進式強化流程 (Execution Flow)
 
-  請在 PowerShell 中依序執行以下指令，以完成從數據採集到機器進化的完整閉環：
+🚀 漸進式強化流程 (Execution Flow)
 
-  1. 專家示範 (Data Collection)rl_human_recorder.py
-  親自操作以產出人類專家的「教材」檔案。
-
-  2. 行為模仿 (Pre-training)rl_pretraining.py
-  讓AI研讀教材，獲得人類的操作直覺。
-
-  3. 機器進化 (Incremental RL)rl_machine_training.py
-  執行增量強化訓練，AI 會透過自我試錯超越人類極限。此指令可多次執行。
-
-  4. 成果展示 (Final Demo)rl_ai_demo.py
-  開啟 25 FPS 高流暢介面觀看 AI 自動化成果與 KPI 報告。
+1. [數據採集] 專家演示錄製 (Expert Data Collection)
+    └── 執行 `rl_human_recorder.py`
+      ├── 說明：手動操控獵人捕捉目標，錄製高品質專家操作軌跡。
+      └── 產出：`human_demo/*.npz` (行為數據集)
+2. [模仿學習] 行為選殖預訓練 (Imitation Learning)
+   └── 執行 `rl_pretraining.py`
+      ├── 說明：讓 AI 讀取專家數據，快速習得「追逐」與「避障」基礎邏輯。
+      └── 產出：`pretrained_hunter.zip` (具備基本智力的模型)
+3. [增量強化] 機器自我進化 (Reinforcement Learning)
+  └── 執行 `rl_machine_training.py`
+      └── 產出：`hunter_latest.pth` / `logs/` (最終進化之 AI 權重與日誌)
+4. [成果驗證] AI 效能展示 (Final Demo)
+  └── 執行 `rl_ai_demo.py`
+      ├── 說明：開啟 25 FPS 高流暢視覺介面，驗證 AI 在實戰中的獵殺效率。
+      └── 產出：KPI 報告與自動化演示。
 
   ---
 
