@@ -1,77 +1,68 @@
 
-# AI 大圖搜索與精準點擊專案
+  本專案實作了一套基於強化學習 (Reinforcement Learning) 的高階觀察者系統原型。AI 代理人必須在 $10000 \times 10000$
+  的巨大空間中，透過 $800 \times 800$ 的有限視野進行自主搜尋，並對動態目標執行像素級的精準獵殺。
 
-本專案實作了一套基於 **強化學習 (Reinforcement Learning, RL)** 的高階觀察者系統。AI 代理人必須在 $10000 \times 10000$ 的全域空間中，透過 $800 \times 800$ 的有限局部視窗搜尋動態目標。
+  🎯 核心技術挑戰
+   * 非全知視角：AI 僅具備 0.64% 的局部觀測率，需具備高效搜索策略。
+   * 解耦控制：實作「視野移動」與「全視窗隨機點擊」的同步決策，不依賴傳統準星對齊。
+   * 持續進化：建立模型權重繼承機制，確保訓練進度永不歸零。
 
-## 🚀 快速上手
-專案架構
+  ---
+
+  📂 專案架構 (Project Tree)
 ```
-   2 ├── rl_human_recorder.py      # [主程式] 專家數據錄製與互動介面
-   3 ├── rl_pretraining.py         # [主程式] 模仿學習預訓練系統 (BC)
-   4 ├── rl_machine_training.py    # [主程式] 機器增量強化訓練系統 (PPO)
-   5 ├── rl_ai_demo.py             # [主程式] AI 成果效能驗證展示介面
-   6 ├── hunter_latest.zip         # [權重] 最終進化之 AI 模型大腦
-   7 ├── pretrained_hunter.zip     # [權重] 模仿人類行為的初期模型
-   8 ├── human_demo/               # [數據] 存放所有人類操作錄製檔 (.npz)
-   9 └── logs/                     # [日誌] 訓練過程數據 (TensorBoard 使用)
+    2 ├── rl_human_recorder.py      # [主程式] 專家數據錄製與互動介面
+    3 ├── rl_pretraining.py         # [主程式] 模仿學習預訓練系統 (BC)
+    4 ├── rl_machine_training.py    # [主程式] 機器增量強化訓練系統 (PPO)
+    5 ├── rl_ai_demo.py             # [主程式] AI 成果效能驗證展示介面
+    6 ├── custom_ppo.py             # [核心] 自定義 PPO 演算法邏輯實現
+    7 ├── model.py                  # [核心] 類神經網路模型 (CNN/MLP) 架構定義
+    8 ├── hunter_latest.pth         # [權重] 訓練好的模型參數檔案 (.pth)
+    9 ├── hunter_latest.zip         # [權重] 最終進化之 AI 模型大腦 (壓縮備份)
+   10 ├── pretrained_hunter.zip     # [權重] 模仿人類行為的初期模型 (壓縮備份)
+   11 ├── human_demo/               # [數據] 存放所有人類操作錄製檔 (.npz)
+   12 ├── logs/                     # [日誌] 訓練過程數據 (TensorBoard 使用)
+   13 └── performance_history.csv   # [紀錄] 訓練效能歷史數據追蹤
+
+
 ```
+  ---
 
-### 1. 環境設定
-請確保您的系統已安裝 Python 3.8+。執行以下指令安裝必要套件：
-```bash
-pip install gymnasium stable-baselines3 pygame torch numpy
+  🚀 漸進式強化流程 (Execution Flow)
 ```
-
-### 2. 開發流程
-本專案遵循「從人類到 AI」的漸進式訓練流程：
-
-#### 步驟 A：專家數據採集 (Expert Data Collection)
-手動錄製人類專家的操作演示，教導 AI 基本的搜尋與點擊邏輯。
-```bash
-python rl_human_recorder.py
+1. [數據採集] 專家演示錄製 (Expert Data Collection)
+    └── 執行 `rl_human_recorder.py`
+      ├── 說明：手動操控獵人捕捉目標，錄製高品質專家操作軌跡。
+      └── 產出：`human_demo/*.npz` (行為數據集)
+2. [模仿學習] 行為選殖預訓練 (Imitation Learning)
+   └── 執行 `rl_pretraining.py`
+      ├── 說明：讓 AI 讀取專家數據，快速習得「追逐」與「避障」基礎邏輯。
+      └── 產出：`pretrained_hunter.zip` (具備基本智力的模型)
+3. [增量強化] 機器自我進化 (Reinforcement Learning)
+    └── 執行 `rl_machine_training.py`
+      └── 產出：`hunter_latest.pth` / `logs/` (最終進化之 AI 權重與日誌)
+4. [成果驗證] AI 效能展示 (Final Demo)
+    └── 執行 `rl_ai_demo.py`
+      ├── 說明：開啟 25 FPS 高流暢視覺介面，驗證 AI 在實戰中的獵殺效率。
+      └── 產出：KPI 報告與自動化演示。
 ```
-*   **在局部視窗內 **點擊左鍵** 進行獵殺。
-*   **輸出**：數據將附帶時間戳並儲存於 `human_demo/` 資料夾。
+  ---
 
-#### 步驟 B：行為克隆預訓練 (Behavioral Cloning)
-透過模仿最新錄製的人類數據，初步訓練 AI 策略。
-```bash
-python rl_pretraining.py
-```
-*   **產出**：生成 `pretrained_hunter.zip` 模型檔。
+  🛠 技術規格說明 (Technical Stack)
+   * 模擬器環境：基於 Gymnasium 標準封裝，整合 Pygame 渲染引擎。
+   * 決策大腦：採用 PPO (Proximal Policy Optimization) 演算法搭配 MLP (多層感知器) 網路。
+   * 動作空間：5 維連續空間向量（視野位移 $\times 2$、點擊座標 $\times 2$、行為觸發 $\times 1$）。
+   * 獎勵機制：包含時間成本損耗、距離趨近引導、視野中心鎖定紅利及精準擊中高額加權。
 
-#### 步驟 C：機器增量強化訓練 (Incremental RL Fine-tuning)
-讓 AI 在人類經驗的基礎上，透過自我試錯與獎勵優化超越人類表現。
-```bash
-# 使用預訓練權重初始化最新模型
-# (Windows 指令)
-copy pretrained_hunter.zip hunter_latest.zip
-# (Unix/Mac 指令)
-cp pretrained_hunter.zip hunter_latest.zip
+  ---
 
-# 執行增量訓練
-python rl_machine_training.py
-```
+  📊 效能指標 (KPIs)
+  在成果展示介面 (rl_ai_demo.py) 中，我們重點驗證以下數據：
+   1. 累計獵殺次數：紀錄 AI 在單場測試（1000 步）中成功擊中目標的總量，衡量 AI 的總產出能力。
+   2. 點擊準確率 (%)：計算「成功擊中次數 / 總開火次數」之百分比，衡量 AI 對局部座標的控制精細度。
+   3. 期望獵殺數 (EHK)：即每分鐘預期的有效點擊產出 (Estimated Hits per Minute)，反映 AI 的實戰獵殺效率。
+   4. 平均誤差 (Error)：紀錄每次點擊位置與目標中心點的像素級偏差（Pixel Distance），驗證 AI 鎖定目標的精準度。
 
-#### 步驟 D：效能驗證展示 (Performance Verification)
-執行自動化演示，評估 AI 的搜尋效率與點擊精確度。
-```bash
-python rl_ai_demo.py
-```
-
----
-
-## 🛠 技術細節
-- **強化學習演算法**：近端策略優化 (Proximal Policy Optimization, PPO)。
-- **神經網路架構**：多層感知器 (Multi-Layer Perceptron, MLP)。
-- **觀測空間 (Observation)**：包含歸一化全域位置、目標相對座標及基於雷達的方向引導特徵。
-- **動作空間 (Action Space)**：5 維連續空間（視野平移 x2、精準點擊座標 x2、點擊觸發 x1）。
-
-## 📊 效能指標 (KPIs)
-- **累計擊中數 (Cumulative Hits)**：成功中和的目標總數。
-- **點擊準確率 (%) (Click Accuracy)**：擊中次數與嘗試點擊總數的比例。
-- **每分鐘期望獵殺數 (EHK)**：標準化的生產率指標。
-- **平均誤差 (Pixels)**：點擊位置與目標中心點的像素級偏差。
-
----
-**本儲存庫供工程審核與後續演算法優化使用。**
+  ---
+  開發者：Gwen (NeuroProGram Project)
+  版本：v10.0 (2026-05-04)
