@@ -48,7 +48,7 @@
   ---
 
   🛠 技術規格說明 (Technical Stack)
- * 1.核心框架與環境 (Frameworks & Env)
+ * 1. 核心框架與環境 (Frameworks & Env)
    * 語言版本: Python 3.x
    * 深度學習: PyTorch (核心張量運算與神經網路架構)
    * 模擬環境: Gymnasium (標準化強化學習環境介面)
