@@ -1,20 +1,20 @@
 import gymnasium as gym
 import numpy as np
-from stable_baselines3 import PPO
+from custom_ppo import PPO
 import os
 import pygame
 import sys
 from collections import deque
 
 # --- 設定固定路徑 ---
-BASE_DIR = r"__File__"
+BASE_DIR = r"C:\Users\Gwen\Desktop\NeuroProGram\week01"
 
-class AdvancedHunterEnv(gym.Env):
+class AdvancedHunterEnv(gym.Env): #環境
     def __init__(self):
         super(AdvancedHunterEnv, self).__init__()
         self.map_size, self.win_size = 10000.0, 800.0
         self.num_targets, self.target_speed, self.view_speed = 60, 15.0, 600.0
-        self.max_steps = 1000
+        self.max_steps = 6000
         self.reset()
 
     def reset(self, seed=None):
@@ -31,14 +31,24 @@ class AdvancedHunterEnv(gym.Env):
         rel_pos = target_pos - self.view_pos
         half_win = self.win_size / 2
         in_view = np.all(np.abs(rel_pos) <= half_win)
+        
         if in_view:
+            # 當目標在視窗內時，使用視窗大小進行正規化，提高精度
             obs_rel_pos = rel_pos / half_win
             seen_flag = 1.0
         else:
+            # 當目標在視窗外時，使用較大的範圍進行正規化
             obs_rel_pos = np.clip(rel_pos / 2000.0, -1, 1)
             seen_flag = -1.0
+            
+        # 觀察下一個目標，給予大略方位
+        next_idx = (self.current_target_idx + 1) % self.num_targets
+        next_rel_pos = self.targets_pos[next_idx] - self.view_pos
+        obs_next_rel_pos = np.clip(next_rel_pos / 2000.0, -1, 1)
+            
         return np.array([(self.view_pos[0]/self.map_size)*2-1, (self.view_pos[1]/self.map_size)*2-1,
-                         obs_rel_pos[0], obs_rel_pos[1], seen_flag], dtype=np.float32)
+                         obs_rel_pos[0], obs_rel_pos[1], seen_flag,
+                         obs_next_rel_pos[0], obs_next_rel_pos[1]], dtype=np.float32)
 
     def step(self, action):
         self.current_step += 1
@@ -70,13 +80,21 @@ class DemoApp:
     def __init__(self, model_filename):
         pygame.init()
         m_path = os.path.join(BASE_DIR, model_filename)
-        self.model = PPO.load(m_path)
         self.env = AdvancedHunterEnv()
+        self.model = PPO.load(m_path, env=self.env)
+        # 內部繪圖尺寸 (保持原始設計以防版面跑版)
+        self.internal_w, self.internal_h = 1300, 950
+        self.screen = pygame.Surface((self.internal_w, self.internal_h))
         
-        # 增大視窗高度以容納下方數據區
-        self.screen_w, self.screen_h = 1300, 950
-        self.screen = pygame.display.set_mode((self.screen_w, self.screen_h))
-        pygame.display.set_caption(f"AI 獵殺效能驗證展示 - {model_filename}")
+        # 實際顯示尺寸 (縮小 80%，保證有標題列)
+        self.scale_factor = 0.8
+        self.screen_w = int(self.internal_w * self.scale_factor)
+        self.screen_h = int(self.internal_h * self.scale_factor)
+        
+        # 強制視窗出現在螢幕左上方，避免被工作列擋住
+        os.environ['SDL_VIDEO_WINDOW_POS'] = "50,30"
+        self.display_screen = pygame.display.set_mode((self.screen_w, self.screen_h))
+        pygame.display.set_caption(f"AI 獵殺效能驗證展示 - 自動縮小版")
         
         self.font_title = pygame.font.SysFont("microsoftjhenghei", 26, bold=True)
         self.font_stat = pygame.font.SysFont("microsoftjhenghei", 20, bold=True)
@@ -201,12 +219,16 @@ class DemoApp:
             # 標題
             self.screen.blit(self.font_title.render("AI 高階觀察者系統：兩大核心互動機制驗證", True, (255, 255, 255)), (50, 25))
 
+            # 3. 將內部畫布縮小並貼到真實視窗上
+            scaled_surf = pygame.transform.smoothscale(self.screen, (self.screen_w, self.screen_h))
+            self.display_screen.blit(scaled_surf, (0, 0))
+
             pygame.display.flip()
             self.clock.tick(25) # 【優化】降至 25 FPS，播放速度更慢更清楚
 
 if __name__ == "__main__":
     import time
-    m_path = "hunter_latest.zip"
+    m_path = "hunter_latest.pth"
     if os.path.exists(os.path.join(BASE_DIR, m_path)):
         DemoApp(m_path).run()
     else:

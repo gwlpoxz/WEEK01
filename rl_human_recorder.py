@@ -1,27 +1,29 @@
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
-from stable_baselines3 import PPO
+from custom_ppo import PPO
 import os
 import pygame
 import sys
 import datetime
 from collections import deque
 import time
+import tkinter as tk
+from tkinter import messagebox
 
 # --- 設定固定路徑 ---
-BASE_DIR = r"__File__"
+BASE_DIR = r"C:\Users\Gwen\Desktop\NeuroProGram\week01"
 DEMO_DIR = os.path.join(BASE_DIR, "human_demo")
 os.makedirs(DEMO_DIR, exist_ok=True)
 
-class AdvancedHunterEnv(gym.Env):
+class AdvancedHunterEnv(gym.Env): #環境
     def __init__(self):
         super(AdvancedHunterEnv, self).__init__()
         self.map_size, self.win_size = 10000.0, 800.0
         self.num_targets, self.target_speed, self.view_speed = 50, 12.0, 600.0
-        self.max_steps = 1000 
+        self.max_steps = 6000 
         self.action_space = spaces.Box(low=-1, high=1, shape=(5,), dtype=np.float32)
-        self.observation_space = spaces.Box(low=-1, high=1, shape=(5,), dtype=np.float32)
+        self.observation_space = spaces.Box(low=-1, high=1, shape=(7,), dtype=np.float32)
         self.reset()
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
@@ -36,8 +38,14 @@ class AdvancedHunterEnv(gym.Env):
         rel_pos = target_pos - self.view_pos
         obs_rel_pos = np.clip(rel_pos / 2000.0, -1, 1)
         seen_flag = 1.0 if np.all(np.abs(rel_pos) <= self.win_size/2) else -1.0
+        # 觀察下一個目標，給予大略方位
+        next_idx = (self.current_target_idx + 1) % self.num_targets
+        next_rel_pos = self.targets_pos[next_idx] - self.view_pos
+        obs_next_rel_pos = np.clip(next_rel_pos / 2000.0, -1, 1)
+        
         return np.array([(self.view_pos[0]/self.map_size)*2-1, (self.view_pos[1]/self.map_size)*2-1,
-                         obs_rel_pos[0], obs_rel_pos[1], seen_flag], dtype=np.float32)
+                         obs_rel_pos[0], obs_rel_pos[1], seen_flag,
+                         obs_next_rel_pos[0], obs_next_rel_pos[1]], dtype=np.float32)
     def step(self, action):
         self.current_step += 1
         self.view_pos = np.clip(self.view_pos + action[0:2] * self.view_speed, 0, self.map_size)
@@ -50,25 +58,35 @@ class AdvancedHunterEnv(gym.Env):
         if action[4] > 0:
             click_pos = self.view_pos + (action[2:4] * (self.win_size / 2))
             info["click_pos"] = click_pos
-            # 檢查是否擊中目前的序號目標
+            # 檢查是否擊中目前的序號目標 (算直線距離: 滑鼠點擊位置 - 目前該打的目標位置)
             dist_to_current = np.linalg.norm(self.targets_pos[self.current_target_idx] - click_pos)
-            if dist_to_current < 65:
+            if dist_to_current < 65:  # 距離小於 65 像素就算擊中！(這就是判定半徑)
                 info["hit"] = True
+                # 擊中後，原本的目標會隨機傳送到地圖上另一個角落
                 self.targets_pos[self.current_target_idx] = np.random.uniform(0, self.map_size, 2)
+                # 把追蹤目標換成下一個序號
                 self.current_target_idx = (self.current_target_idx + 1) % self.num_targets
         return obs, reward, False, self.current_step >= self.max_steps, info
 
-class InteractiveVisualizer:
+class InteractiveVisualizer: #主程式
     def __init__(self, model_filename):
         pygame.init()
         self.env = AdvancedHunterEnv()
         m_path = os.path.join(BASE_DIR, model_filename) if model_filename else None
-        self.model = PPO.load(m_path) if m_path and os.path.exists(m_path) else None
+        self.model = PPO.load(m_path, env=self.env) if m_path and os.path.exists(m_path) else None
+        # 內部繪圖尺寸 (保持原始設計以防版面跑版)
+        self.internal_w, self.internal_h = 1300, 950
+        self.screen = pygame.Surface((self.internal_w, self.internal_h))
         
-        # 視窗尺寸同步
-        self.screen_w, self.screen_h = 1300, 950
-        self.screen = pygame.display.set_mode((self.screen_w, self.screen_h))
-        pygame.display.set_caption("互動錄製與展示 (數據保存版)")
+        # 實際顯示尺寸 (縮小 80%，保證有標題列)
+        self.scale_factor = 0.8
+        self.screen_w = int(self.internal_w * self.scale_factor)
+        self.screen_h = int(self.internal_h * self.scale_factor)
+        
+        # 強制視窗出現在螢幕左上方，避免被工作列擋住
+        os.environ['SDL_VIDEO_WINDOW_POS'] = "50,30"
+        self.display_screen = pygame.display.set_mode((self.screen_w, self.screen_h))
+        pygame.display.set_caption("互動錄製與展示 (自動縮小版)")
         
         self.clock = pygame.time.Clock()
         self.font_title = pygame.font.SysFont("microsoftjhenghei", 26, bold=True)
@@ -86,10 +104,11 @@ class InteractiveVisualizer:
 
     def get_human_action(self, click_event=False):
         keys = pygame.key.get_pressed()
-        mp, mc = pygame.mouse.get_pos(), pygame.mouse.get_pressed()
+        mp_raw, mc = pygame.mouse.get_pos(), pygame.mouse.get_pressed()
+        mp = (mp_raw[0] / self.scale_factor, mp_raw[1] / self.scale_factor) # 還原滑鼠座標比例
         dx, dy = 0, 0
         
-        # 1. 處理移動邏輯 (WASD 或 全域圖引導)
+        # 1. 處理移動邏輯 
         v_p = self.env.view_pos
         # 如果有點擊事件，當前幀停止移動以確保準投，否則繼續跟隨
         if not click_event and 700 <= mp[0] <= 1250 and 80 <= mp[1] <= 630:
@@ -125,7 +144,26 @@ class InteractiveVisualizer:
         while True:
             click_now = False
             for event in pygame.event.get():
-                if event.type == pygame.QUIT: self.save_recording(); pygame.quit(); sys.exit()
+                if event.type == pygame.QUIT:
+                    if len(self.recording) == 0:
+                        pygame.quit(); sys.exit()
+                    # 顯示確認對話框
+                    root = tk.Tk()
+                    root.withdraw()
+                    root.attributes('-topmost', True) # 確保對話框出現在最上層
+                    result = messagebox.askyesnocancel(
+                        "離開錄製器", 
+                        "是否要儲存目前的錄製資料？\n\n[是] 儲存並離開\n[否] 放棄資料並離開\n[取消] 繼續錄製",
+                        parent=root
+                    )
+                    root.destroy()
+                    
+                    if result is True:
+                        self.save_recording()
+                        pygame.quit(); sys.exit()
+                    elif result is False:
+                        pygame.quit(); sys.exit()
+                    # 若 result 為 None (按下取消或右上角 X)，則什麼都不做，繼續錄製
                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     click_now = True
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
@@ -228,7 +266,8 @@ class InteractiveVisualizer:
             self.screen.blit(self.font_title.render("人類觀察者錄製系統：數據採集與循序引導驗證", True, (255, 255, 255)), (50, 25))
 
             # --- 繪製靶心跟隨滑鼠 (新增邏輯) ---
-            mx, my = pygame.mouse.get_pos()
+            mx_raw, my_raw = pygame.mouse.get_pos()
+            mx, my = int(mx_raw / self.scale_factor), int(my_raw / self.scale_factor)
             mouse_c = (200, 200, 200) # 預覽靶心顏色 (淺灰色)
             
             # 1. 檢查是否在左側視野
@@ -243,6 +282,10 @@ class InteractiveVisualizer:
                 pygame.draw.line(self.screen, mouse_c, (mx, my-10), (mx, my+10), 1)
                 pygame.draw.circle(self.screen, mouse_c, (mx, my), 8, 1)
 
+            # 3. 將內部畫布縮小並貼到真實視窗上
+            scaled_surf = pygame.transform.smoothscale(self.screen, (self.screen_w, self.screen_h))
+            self.display_screen.blit(scaled_surf, (0, 0))
+            
             pygame.display.flip()
             self.clock.tick(25) 
 
@@ -255,4 +298,4 @@ class InteractiveVisualizer:
             print(f"\n[系統] 錄製成功！檔案已儲存至：{save_path}")
 
 if __name__ == "__main__":
-    InteractiveVisualizer("hunter_latest.zip").run()
+    InteractiveVisualizer("hunter_latest.pth").run()
