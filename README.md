@@ -12,17 +12,19 @@
 
   📂 專案架構 (Project Tree)
 ```
- 1 NeuroProGram/week01/
- 2 ├── rl_human_recorder.py      # [主程式] 專家數據錄製與互動介面
- 3 ├── rl_pretraining.py         # [主程式] 模仿學習預訓練系統 (BC)
- 4 ├── rl_machine_training.py    # [主程式] 機器增量強化訓練系統 (PPO)
- 5 ├── rl_ai_demo.py             # [主程式] AI 成果效能驗證展示介面
- 6 ├── hunter_env.py             # [核心] 獵人遊戲環境邏輯與獎勵機制
- 7 ├── hunter_latest.zip         # [權重] 最終進化之 AI 模型大腦
- 8 ├── pretrained_hunter.zip     # [權重] 模仿人類行為的初期模型
- 9 ├── human_demo/               # [數據] 存放所有人類操作錄製檔 (.npz)
-10 ├── logs/                     # [日誌] 訓練過程數據 (TensorBoard 使用)
-11 └──  performance_history.csv   # [紀錄] 訓練效能歷史數據追蹤
+
+    0 ├── rl_human_recorder.py      # [主程式] 專家數據錄製與互動介面
+    1 ├── rl_pretraining.py         # [主程式] 模仿學習預訓練系統 (BC)
+    2 ├── rl_machine_training.py    # [主程式] 機器增量強化訓練系統 (PPO)
+    3 ├── rl_ai_demo.py             # [主程式] AI 成果效能驗證展示介面
+    4 ├── custom_ppo.py             # [核心] 自定義 PPO 演算法邏輯實現
+    5 ├── model.py                  # [核心] 類神經網路模型 (CNN/MLP) 架構定義
+    6 ├── hunter_latest.pth         # [權重] 訓練好的模型參數檔案 (.pth)
+    7 ├── hunter_latest.zip         # [權重] 最終進化之 AI 模型大腦 (壓縮備份)
+    8 ├── pretrained_hunter.zip     # [權重] 模仿人類行為的初期模型 (壓縮備份)
+    9 ├── human_demo/               # [數據] 存放所有人類操作錄製檔 (.npz)
+   10 ├── logs/                     # [日誌] 訓練過程數據 (TensorBoard 使用)
+   11 └── performance_history.csv   # [紀錄] 訓練效能歷史數據追蹤
 
 ```
   ---
@@ -46,10 +48,30 @@
   ---
 
   🛠 技術規格說明 (Technical Stack)
-   * 模擬器環境：基於 Gymnasium 標準封裝，整合 Pygame 渲染引擎。
-   * 決策大腦：採用 PPO (Proximal Policy Optimization) 演算法搭配 MLP (多層感知器) 網路。
-   * 動作空間：5 維連續空間向量（視野位移 $\times 2$、點擊座標 $\times 2$、行為觸發 $\times 1$）。
-   * 獎勵機制：包含時間成本損耗、搜尋引導獎勵及精準度加權分數。
+ * 1.核心框架與環境 (Frameworks & Env)
+   * 語言版本: Python 3.x
+   * 深度學習: PyTorch (核心張量運算與神經網路架構)
+   * 模擬環境: Gymnasium (標準化強化學習環境介面)
+   * 介面渲染: Pygame (用於 2D 視覺化錄製與 AI 展示介面)
+
+ * 2. 神經網路架構 (Neural Network Architecture)
+   * 類型: MLP (Multi-Layer Perceptron)
+   * 模型類別: Actor-Critic 結構
+       * Actor (策略): 負責決定獵人的移動方向與動作。
+       * Critic (評價值): 負責預測當前狀態的預期獎勵。
+   * 優化器: Adam Optimizer (動態學習率調整)
+   * 激活函數: Tanh (用於平滑連續動作空間的輸出)
+
+ * 3. 強化學習演算法 (RL Algorithm)
+   * 演算法: PPO (Proximal Policy Optimization)
+   * 實現方式: 自定義 custom_ppo.py 實現 (非直接調用封裝庫)。
+   * 緩衝機制: RolloutBuffer (離線策略數據存儲，用於穩定更新)。
+   * 訓練策略: 基於「預訓練模型 (BC)」的增量式強化學習。
+
+ * 4. 數據與監控 (Data & Monitoring)
+   * 數據格式: .npz (NumPy 壓縮格式，儲存錄製好的專家軌跡)。
+   * 效能紀錄: Pandas / CSV (追蹤訓練過程中的平均獎勵與步數)。
+   * 日誌系統: TensorBoard (視覺化訓練收斂曲線，儲存於 logs/)。
 
   ---
 
