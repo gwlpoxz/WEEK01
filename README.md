@@ -39,10 +39,10 @@
       ├── 說明：讓 AI 讀取專家數據，快速習得「追逐」與「避障」基礎邏輯。
       └── 產出：`pretrained_hunter.zip` (具備基本智力的模型)
 3. [增量強化] 機器自我進化 (Reinforcement Learning)
-  └── 執行 `rl_machine_training.py`
+    └── 執行 `rl_machine_training.py`
       └── 產出：`hunter_latest.pth` / `logs/` (最終進化之 AI 權重與日誌)
 4. [成果驗證] AI 效能展示 (Final Demo)
-  └── 執行 `rl_ai_demo.py`
+    └── 執行 `rl_ai_demo.py`
       ├── 說明：開啟 25 FPS 高流暢視覺介面，驗證 AI 在實戰中的獵殺效率。
       └── 產出：KPI 報告與自動化演示。
 ```
